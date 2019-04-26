@@ -11,16 +11,21 @@ app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Static middleware
-//app.use(express.static(path.join(__dirname, '..', 'public')));
-
-app.get("/", (req, res, next) => {
-  res.send("<h1>Hello World</h1>");
-});
-
 app.get("/", (req, res) => {
   res.send("<h1>Hello World</h1>");
 });
+
+//eager loading
+app.get("/pugs", async (req, res, next) => {
+    try {
+      const pugs = await Pug.findAll({
+        include: [{ model: Owner }]
+      });
+      res.json(pugs);
+    } catch (err) {
+      next(err);
+    }
+  });
 
 app.get("/pugs/:id", async (req, res, next) => {
   try {
@@ -38,27 +43,36 @@ app.get("/pugs/:id", async (req, res, next) => {
   }
 });
 
+app.get('/puppies', async (req, res, next) => {
+    try {
+        let puppies = await Pug.getPuppies();
+        res.json(puppies);
+    }
+    catch (err) {
+        next(err);
+    }
+
+})
+
+app.get('/pugs/:id/celebrate', async (req, res, next) => {
+    try {
+        let pug = await Pug.findByPk(req.params.id);
+        await pug.celebrateBirthday(); // this will increment pugs age by 7
+        res.send(`<h1>Happy Birthday ${pug.name}</h1> You are now ${pug.age} `);
+    }
+    catch (err) {
+        next(err);
+    }
+})
 //shows 500 error
 app.get("/error", (req, res, next) => {
-  try {
-    unreferencedVariable;
-  } catch (err) {
-    next(err);
-  }
-});
-
-//eager loading
-app.get("/pugs", async (req, res, next) => {
-  try {
-    const pugs = await Pug.findAll({
-      include: [{ model: Owner }]
-    });
-    res.json(pugs);
-  } catch (err) {
-    next(err);
-  }
-});
-
+    try {
+      unreferencedVariable;
+    } catch (err) {
+      next(err);
+    }
+  });
+  
 //You can ALSO have NESTED eager loading for joining more than 2 tables! *Note that this is pseudocode*
 /*User.findAll({
       include: [
